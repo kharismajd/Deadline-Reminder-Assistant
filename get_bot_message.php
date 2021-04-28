@@ -4,6 +4,7 @@ include('database.inc.php');
 $new_task_keywords = array();
 $task_done_keywords = array();
 $task_date_changed_keywords = array();
+$tugas_keywords = array();
 
 $sql = "select keyword from `new_task_keywords`";
 $res = mysqli_query($con, $sql);
@@ -26,11 +27,14 @@ while ($row = mysqli_fetch_assoc($res))
 	array_push($task_date_changed_keywords, $row['keyword']);
 }
 
-$txt = mysqli_real_escape_string($con,$_POST['txt']);
-$sql = "select reply from questions where question like '%$txt%'";
-$res = mysqli_query($con,$sql);
+$sql = "select keyword from `new_task_keywords` where type = 'Task'";
+$res= mysqli_query($con, $sql);
+while ($row = mysqli_fetch_assoc($res))
+{
+	array_push($tugas_keywords, $row['keyword']);
+}
 
-$date = DateTime::createFromFormat('d-m-Y', '28-05-2020');
+$txt = mysqli_real_escape_string($con,$_POST['txt']);
 
 if (isNewTask($txt, $new_task_keywords) != -1)
 {
@@ -55,6 +59,10 @@ else if (isCheckNDayTask($txt) != -1)
 else if (isCheckTodayTask($txt) != -1)
 {
 	printTodayTask($con);
+}
+else if (isCheckCourseCodeTask($txt) != -1)
+{
+	printCourseCodeTask($con, $txt, $tugas_keywords);
 }
 else if (isDoneTask($txt, $task_done_keywords) != -1)
 {
@@ -206,7 +214,7 @@ function printNDayTask($con, $text)
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+		echo "Tidak ada deadline $day_count[0] hari dari sekarang<br>";
 	}
 	else
 	{
@@ -249,7 +257,7 @@ function printNWeekTask($con, $text)
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+		echo "Tidak ada deadline $week_count[0] minggu dari sekarang<br>";
 	}
 	else
 	{
@@ -257,6 +265,62 @@ function printNWeekTask($con, $text)
 		while ($row = mysqli_fetch_assoc($res))
 		{
 			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
+}
+
+function isCheckCourseCodeTask($text)
+{
+	$course_code_pattern = "/Tugas\s*[A-Za-z]{2}\d{4}\s*/i";
+	if (!preg_match($course_code_pattern, $text, $matches))
+	{
+		return - 1;
+	}
+
+	if (KMP("Deadline", $text) != -1)
+	{
+		return trim(substr($matches[0], 5));
+	}
+
+	return -1;
+}
+
+function printCourseCodeTask($con, $text, $tugas_keywords)
+{
+	$date_now = date('Y-m-d');
+	$course_code = isCheckCourseCodeTask($text);
+	if (count($tugas_keywords) == 1)
+	{
+		$query = "select * from tasks where type = '$tugas_keywords[0]'";
+	}
+	else
+	{
+		$query = "select * from tasks where (type = '$tugas_keywords[0]'";
+	}
+
+	for ($i = 1; $i < count($tugas_keywords) - 1; $i++)
+	{
+		$query = $query . " or type = '$tugas_keywords[$i]'";
+	}
+
+	$last_index = count($tugas_keywords) - 1;
+	if (count($tugas_keywords) > 1)
+	{
+		$query = $query . " or type = '$tugas_keywords[$last_index]')";
+	}
+
+	$query = $query . " and LOWER(course_id) = LOWER('$course_code') and deadline > '$date_now'";
+
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline dari mata kuliah tersebut<br>";
+	}
+	else
+	{
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y') . "<br>";
 		}
 	}
 }
