@@ -265,7 +265,7 @@ function isNewTask($text, $new_task_keywords)
 {
 	for ($i = 0; $i < count($new_task_keywords); $i++)
 	{
-		$pattern = "/$new_task_keywords[$i]\s*[A-Za-z]{2}\d{4}\s*(.*)pada\s*\d{2}\/\d{2}\/\d{4}/i";
+		$pattern = "/$new_task_keywords[$i]\s*[A-Za-z]{2}\d{4}\s*(.*)\s*pada\s*\d{2}\/\d{2}\/\d{4}/i";
 		if (preg_match($pattern, $text, $matches, PREG_OFFSET_CAPTURE))
 		{
 			return $matches[0][1];
@@ -293,7 +293,8 @@ function makeNewTask($con, $text, $new_task_keywords)
 	preg_match($pattern, $task_str, $date_start, PREG_OFFSET_CAPTURE);
 	$topic = substr($task_str, $course_code[0][1] + 6, $date_start[0][1] - 1 - ($course_code[0][1] + 6));
 
-	$deadline = substr($task_str, $date_start[0][1] + 5, $date_start[0][1] + 5 + 10 - ($date_start[0][1] + 5));
+	$deadline = substr($date_start[0][0], 5);
+	$deadline = trim($deadline);
 	$deadline = DateTime::createFromFormat('d/m/Y', $deadline);
 
 	insertTaskDB($con, $course_code[0][0], $task_type, $topic, $deadline);
@@ -301,10 +302,14 @@ function makeNewTask($con, $text, $new_task_keywords)
 
 function isPostponeTask($text, $task_date_changed_keywords)
 {
-	$task_id = "/Task\s*(\d+)\s*/i";
-	if (!preg_match($task_id, $text, $matches))
+	$pattern = "/Task\s*(\d+)\s*/i";
+	if (!preg_match($pattern, $text, $matches))
 	{
-		return -1;
+		$pattern = "/Tugas\s*(\d+)\s*/i";
+		if (!preg_match($pattern, $text, $matches))
+		{
+			return -1;
+		}
 	}
 
 	$date = "/\d{2}\/\d{2}\/\d{4}/i";
@@ -326,8 +331,16 @@ function isPostponeTask($text, $task_date_changed_keywords)
 function postponeTask($con, $text, $task_date_changed_keywords)
 {
 	$task_id_pattern = "/Task\s*(\d+)\s*/i";
-	preg_match($task_id_pattern, $text, $matches);
-	$task_id = substr($matches[0], 4);
+	if (preg_match($task_id_pattern, $text, $matches))
+	{
+		$task_id = substr($matches[0], 4);
+	}
+
+	$task_id_pattern = "/Tugas\s*(\d+)\s*/i";
+	if (preg_match($task_id_pattern, $text, $matches))
+	{
+		$task_id = substr($matches[0], 5);
+	}
 
 	$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
 	preg_match($date_pattern, $text, $matches);
@@ -341,14 +354,37 @@ function isDoneTask($text, $task_done_keywords)
 	$pattern = "/Task\s*(\d+)\s*/i";
 	if (!preg_match($pattern, $text, $matches))
 	{
+		$pattern = "/Tugas\s*(\d+)\s*/i";
+		if (!preg_match($pattern, $text, $matches))
+		{
+			return -1;
+		}
+		else
+		{
+			$task_id = substr($matches[0], 5);
+		}
+	}
+	else
+	{
+		$task_id = substr($matches[0], 4);
+	}
+	
+	$pattern = "/Tugas\s*(\d+)\s*/i";
+	if (!preg_match($pattern, $text, $matches))
+	{
 		return -1;
+	}
+	else
+	{
+		$task_id = substr($matches[0], 5);
+		
 	}
 
 	for ($i = 0; $i < count($task_done_keywords); $i++)
 	{
 		if (KMP($task_done_keywords[$i], $text) != -1)
 		{
-			return substr($matches[0], 4);
+			return $task_id;
 		}
 	}
 	return -1;
