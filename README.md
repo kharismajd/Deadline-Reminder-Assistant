@@ -14,7 +14,7 @@ Jika ingin melakukan perubahan/editing code, Anda dapat gunakan Visual Studio.
 
 ## Cara Pengunaan
 Jika ingin menjalankan di server lokal: 
-1. Jalankan XAMPP kemudian aktifkan modul Apache dan MySQL dengan mengklik tombol Start.
+1. Jalankan XAMPP kemudian aktifkan modul Apache dengan mengklik tombol Start.
 2. Buat folder baru dengan nama misalkan "chatbot" di direktori C:/xampp/htdocs.
 2. Copy isi folder src ke dalam folder chatbot.
 3. Buka aplikasi peramban (browser), contoh: Google Chrome.
