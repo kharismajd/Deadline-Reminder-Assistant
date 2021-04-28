@@ -676,30 +676,37 @@ function deleteTaskDB($con, $id)
 function KMP($pattern, $text)
 {
 	$M = strlen($pattern);
-    $N = strlen($text);
+	$N = strlen($text);
   
-    $lps = LPSarray($pattern);
+	$lps = LPSarray($pattern);
   
-    $i = 0;
-    $j = 0;
-    while ($i < $N) {
-        if (strtolower($pattern[$j]) == strtolower($text[$i])) {
-            $j++;
-            $i++;
-        }
+	$i = 0;
+	$j = 0;
+	while ($i < $N) {
+		if (strtolower($pattern[$j]) == strtolower($text[$i]))
+		{
+			$j++;
+			$i++;
+		}
   
-        if ($j == $M) {
+		if ($j == $M)
+		{
 			$idx = $i - $j;
 			return $idx;
-        }
+		}
   
-        else if ($i < $N && strtolower($pattern[$j]) != strtolower($text[$i])) {
-            if ($j != 0)
-                $j = $lps[$j - 1];
-            else
-                $i = $i + 1;
-        }
-    }
+		else if ($i < $N && strtolower($pattern[$j]) != strtolower($text[$i]))
+		{
+			if ($j == 0)
+			{
+				$i = $i + 1;
+			}
+			else
+			{
+				$j = $lps[$j - 1];
+			}
+		}
+	}
 
 	return -1;
 }
@@ -708,28 +715,30 @@ function LPSarray($pattern)
 {
 	$len = 0;
   
-    $lps = array();
+	$lps = array();
 	$lps[0] = 0;
   
-    $i = 1;
-    while ($i < strlen($pattern)) {
-        if (strtolower($pattern[$i]) == strtolower($pattern[$len])) {
-            $len++;
-            $lps[$i] = $len;
-            $i++;
-        }
-        else
-        {
-            if ($len != 0) {
-                $len = $lps[$len - 1];
-            }
-            else
-            {
-                $lps[$i] = 0;
-                $i++;
-            }
-        }
-    }
+	$i = 1;
+	while ($i < strlen($pattern)) {
+		if (strtolower($pattern[$i]) == strtolower($pattern[$len]))
+		{
+			$len++;
+			$lps[$i] = $len;
+			$i++;
+		}
+		else
+		{
+			if ($len != 0)
+			{
+				$len = $lps[$len - 1];
+			}
+			else
+			{
+				$lps[$i] = 0;
+				$i++;
+			}
+		}
+	}
 
 	return $lps;
 }
