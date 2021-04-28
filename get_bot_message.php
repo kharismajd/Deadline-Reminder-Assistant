@@ -36,31 +36,51 @@ while ($row = mysqli_fetch_assoc($res))
 
 $txt = mysqli_real_escape_string($con,$_POST['txt']);
 
-if (isNewTask($txt, $new_task_keywords) != -1)
+if (newTask($txt, $new_task_keywords) != -1)
 {
 	makeNewTask($con, $txt, $new_task_keywords);
 }
-else if (isCheckAllTask($txt) != -1)
+else if (checkAllTaskWithType($txt, $new_task_keywords) != -1)
 {
-	printAllTask($con);
+	printAllTask($con, checkAllTaskWithType($txt, $new_task_keywords));
 }
-else if (isCheckBetweenDateTask($txt) != -1)
+else if (checkBetweenDateTaskWithType($txt, $new_task_keywords) != -1)
 {
-	printTaskBetweenDates($con, $txt);
+	printTaskBetweenDates($con, $txt, checkBetweenDateTaskWithType($txt, $new_task_keywords));
 }
-else if (isCheckNWeekTask($txt) != -1)
+else if (checkNWeekTaskWithType($txt, $new_task_keywords) != -1)
 {
-	printNWeekTask($con, $txt);
+	printNWeekTask($con, $txt, checkNWeekTaskWithType($txt, $new_task_keywords));
 }
-else if (isCheckNDayTask($txt) != -1)
+else if (checkNDayTaskWithType($txt, $new_task_keywords) != -1)
 {
-	printNDayTask($con, $txt);
+	printNDayTask($con, $txt, checkNDayTaskWithType($txt, $new_task_keywords));
 }
-else if (isCheckTodayTask($txt) != -1)
+else if (checkTodayTaskWithType($txt, $new_task_keywords) != -1)
 {
-	printTodayTask($con);
+	printTodayTask($con, checkTodayTaskWithType($txt, $new_task_keywords));
 }
-else if (isCheckCourseCodeTask($txt) != -1)
+else if (checkAllTask($txt) != -1)
+{
+	printAllTask($con, NULL);
+}
+else if (checkBetweenDateTask($txt) != -1)
+{
+	printTaskBetweenDates($con, $txt, NULL);
+}
+else if (checkNWeekTask($txt) != -1)
+{
+	printNWeekTask($con, $txt, NULL);
+}
+else if (checkNDayTask($txt) != -1)
+{
+	printNDayTask($con, $txt, NULL);
+}
+else if (checkTodayTask($txt) != -1)
+{
+	printTodayTask($con, NULL);
+}
+else if (checkCourseCodeTask($txt) != -1)
 {
 	printCourseCodeTask($con, $txt, $tugas_keywords);
 }
@@ -68,25 +88,20 @@ else if (isDoneTask($txt, $task_done_keywords) != -1)
 {
 	doneTask($con, $txt, $task_done_keywords);
 }
-else if (isPostponeTask($txt, $task_date_changed_keywords) != -1)
+else if (isChageDateTask($txt, $task_date_changed_keywords) != -1)
 {
-	postponeTask($con, $txt, $task_date_changed_keywords);
+	changeDateTask($con, $txt, $task_date_changed_keywords);
 }
 else
 {
 	echo "Maaf, saya tidak mengerti<br>";
 }
 
-function isCheckAllTask($text)
+function checkAllTask($text)
 {
-	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	if (KMP("Deadline", $text) != -1 || KMP("Task", $text) != -1)
 	{
-		if (KMP("Sejauh ini", $text) != -1)
-		{
-			return 1;
-		}
-
-		if (KMP("Saat ini", $text) != -1)
+		if (KMP("Sejauh ini", $text) != -1 || KMP("Saat ini", $text) != -1)
 		{
 			return 1;
 		}
@@ -94,13 +109,44 @@ function isCheckAllTask($text)
 	return -1;
 }
 
-function printAllTask($con)
+function checkAllTaskWithType($text, $new_task_keywords)
 {
-	$query = "select * from tasks";
+	if (KMP("Sejauh ini", $text) != -1 || KMP("Saat ini", $text) != -1)
+	{
+		for ($i = 0; $i < count($new_task_keywords); $i++)
+		{
+			if (KMP($new_task_keywords[$i], $text) != -1)
+			{
+				return $new_task_keywords[$i];
+			}
+		}
+	}
+	return -1;
+}
+
+function printAllTask($con, $task_keyword)
+{
+	if ($task_keyword == NULL)
+	{
+		$query = "select * from tasks";
+	}
+	else
+	{
+		$query = "select * from tasks where type = '$task_keyword'";
+	}
+
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline<br>";
+		if ($task_keyword == NULL)
+		{
+			echo "Tidak ada deadline<br>";
+		}
+		else
+		{
+			$lowercase_task_keyword = strtolower($task_keyword);
+			echo "Tidak ada $lowercase_task_keyword<br>";
+		}
 	}
 	else
 	{
@@ -112,9 +158,9 @@ function printAllTask($con)
 	}
 }
 
-function isCheckTodayTask($text)
+function checkTodayTask($text)
 {
-	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	if (KMP("Deadline", $text) != -1 || KMP("Task", $text) != -1)
 	{
 		if (KMP("Hari ini", $text) != -1)
 		{
@@ -124,14 +170,46 @@ function isCheckTodayTask($text)
 	return -1;
 }
 
-function printTodayTask($con)
+function checkTodayTaskWithType($text, $new_task_keywords)
+{
+	if (KMP("Hari ini", $text) != -1)
+	{
+		for ($i = 0; $i < count($new_task_keywords); $i++)
+		{
+			if (KMP($new_task_keywords[$i], $text) != -1)
+			{
+				return $new_task_keywords[$i];
+			}
+		}
+	}
+	return -1;
+}
+
+function printTodayTask($con, $task_keyword)
 {
 	$date_now = date('Y-m-d');
-	$query = "select * from tasks where deadline = '$date_now'";
+	
+	if ($task_keyword == NULL)
+	{
+		$query = "select * from tasks where deadline = '$date_now'";
+	}
+	else
+	{
+		$query = "select * from tasks where deadline = '$date_now' and type = '$task_keyword'";
+	}
+
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline untuk hari ini<br>";
+		if ($task_keyword == NULL)
+		{
+			echo "Tidak ada deadline untuk hari ini<br>";
+		}
+		else
+		{
+			$lowercase_task_keyword = strtolower($task_keyword);
+			echo "Tidak ada $lowercase_task_keyword untuk hari ini<br>";
+		}
 	}
 	else
 	{
@@ -143,9 +221,9 @@ function printTodayTask($con)
 	}
 }
 
-function isCheckBetweenDateTask($text)
+function checkBetweenDateTask($text)
 {
-	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	if (KMP("Deadline", $text) != -1 || KMP("Task", $text) != -1)
 	{
 		$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
 		if (preg_match_all($date_pattern, $text, $matches))
@@ -159,7 +237,26 @@ function isCheckBetweenDateTask($text)
 	return -1;
 }
 
-function printTaskBetweenDates($con, $text)
+function checkBetweenDateTaskWithType($text, $new_task_keywords)
+{
+	$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
+	if (preg_match_all($date_pattern, $text, $matches))
+	{
+		if (count($matches[0]) == 2)
+		{
+			for ($i = 0; $i < count($new_task_keywords); $i++)
+			{
+				if (KMP($new_task_keywords[$i], $text) != -1)
+				{
+					return $new_task_keywords[$i];
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+function printTaskBetweenDates($con, $text, $task_keyword)
 {
 	$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
 	preg_match_all($date_pattern, $text, $matches);
@@ -167,11 +264,27 @@ function printTaskBetweenDates($con, $text)
 	$date1 = DateTime::createFromFormat('d/m/Y', $matches[0][0])->format('Y-m-d');
 	$date2 = DateTime::createFromFormat('d/m/Y', $matches[0][1])->format('Y-m-d');
 
-	$query = "select * from tasks where deadline >= '$date1' and deadline <= '$date2'";
+	if ($task_keyword == NULL)
+	{
+		$query = "select * from tasks where deadline >= '$date1' and deadline <= '$date2'";
+	}
+	else
+	{
+		$query = "select * from tasks where deadline >= '$date1' and deadline <= '$date2' and type = '$task_keyword'";
+	}
+
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+		if ($task_keyword == NULL)
+		{
+			echo "Tidak ada deadline di antara tanggal tersebut<br>";
+		}
+		else
+		{
+			$lowercase_task_keyword = strtolower($task_keyword);
+			echo "Tidak ada $lowercase_task_keyword di antara tanggal tersebut<br>";
+		}
 	}
 	else
 	{
@@ -183,9 +296,9 @@ function printTaskBetweenDates($con, $text)
 	}
 }
 
-function isCheckNDayTask($text)
+function checkNDayTask($text)
 {
-	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	if (KMP("Deadline", $text) != -1 || KMP("Task", $text) != -1)
 	{
 		$day_pattern = "/(\d+)\s*hari ke depan/i";
 		if (preg_match($day_pattern, $text, $matches))
@@ -196,7 +309,24 @@ function isCheckNDayTask($text)
 	return -1;
 }
 
-function printNDayTask($con, $text)
+function checkNDayTaskWithType($text, $new_task_keywords)
+{
+	$day_pattern = "/(\d+)\s*hari ke depan/i";
+	if (preg_match($day_pattern, $text, $matches))
+	{
+		for ($i = 0; $i < count($new_task_keywords); $i++)
+		{
+			if (KMP($new_task_keywords[$i], $text) != -1)
+			{
+				return $new_task_keywords[$i];
+			}
+		}
+	}
+	return -1;
+}
+
+
+function printNDayTask($con, $text, $task_keyword)
 {
 	$day_pattern = "/(\d+)\s*hari ke depan/i";
 	preg_match($day_pattern, $text, $matches);
@@ -209,12 +339,28 @@ function printNDayTask($con, $text)
 
 	$date_now_str = $date_now->format('Y-m-d');
 	$date_Nday_str = $date_Nday->format('Y-m-d');
+	
+	if ($task_keyword == NULL)
+	{
+		$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nday_str'";
+	}
+	else
+	{
+		$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nday_str' and type = '$task_keyword'";
+	}
 
-	$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nday_str'";
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline $day_count[0] hari dari sekarang<br>";
+		if ($task_keyword == NULL)
+		{
+			echo "Tidak ada deadline $day_count[0] hari dari sekarang<br>";
+		}
+		else
+		{
+			$lowercase_task_keyword = strtolower($task_keyword);
+			echo "Tidak ada $lowercase_task_keyword $day_count[0] hari dari sekarang<br>";
+		}
 	}
 	else
 	{
@@ -226,9 +372,9 @@ function printNDayTask($con, $text)
 	}
 }
 
-function isCheckNWeekTask($text)
+function checkNWeekTask($text)
 {
-	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	if (KMP("Deadline", $text) != -1 || KMP("Task", $text) != -1)
 	{
 		$day_pattern = "/(\d+)\s*minggu ke depan/i";
 		if (preg_match($day_pattern, $text, $matches))
@@ -239,7 +385,23 @@ function isCheckNWeekTask($text)
 	return -1;
 }
 
-function printNWeekTask($con, $text)
+function checkNWeekTaskWithType($text, $new_task_keywords)
+{
+	$day_pattern = "/(\d+)\s*minggu ke depan/i";
+	if (preg_match($day_pattern, $text, $matches))
+	{
+		for ($i = 0; $i < count($new_task_keywords); $i++)
+		{
+			if (KMP($new_task_keywords[$i], $text) != -1)
+			{
+				return $new_task_keywords[$i];
+			}
+		}
+	}
+	return -1;
+}
+
+function printNWeekTask($con, $text, $task_keyword)
 {
 	$week_pattern = "/(\d+)\s*minggu ke depan/i";
 	preg_match($week_pattern, $text, $matches);
@@ -253,11 +415,27 @@ function printNWeekTask($con, $text)
 	$date_now_str = $date_now->format('Y-m-d');
 	$date_Nweek_str = $date_Nweek->format('Y-m-d');
 
-	$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nweek_str'";
+	if ($task_keyword == NULL)
+	{
+		$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nweek_str'";
+	}
+	else
+	{
+		$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nweek_str' and type = '$task_keyword'";
+	}
+
 	$res = mysqli_query($con, $query);
 
 	if (mysqli_num_rows($res) == 0) { 
-		echo "Tidak ada deadline $week_count[0] minggu dari sekarang<br>";
+		if ($task_keyword == NULL)
+		{
+			echo "Tidak ada deadline $week_count[0] minggu dari sekarang<br>";
+		}
+		else
+		{
+			$lowercase_task_keyword = strtolower($task_keyword);
+			echo "Tidak ada $lowercase_task_keyword $week_count[0] minggu dari sekarang<br>";
+		}
 	}
 	else
 	{
@@ -269,7 +447,7 @@ function printNWeekTask($con, $text)
 	}
 }
 
-function isCheckCourseCodeTask($text)
+function checkCourseCodeTask($text)
 {
 	$course_code_pattern = "/Tugas\s*[A-Za-z]{2}\d{4}\s*/i";
 	if (!preg_match($course_code_pattern, $text, $matches))
@@ -288,7 +466,7 @@ function isCheckCourseCodeTask($text)
 function printCourseCodeTask($con, $text, $tugas_keywords)
 {
 	$date_now = date('Y-m-d');
-	$course_code = isCheckCourseCodeTask($text);
+	$course_code = checkCourseCodeTask($text);
 	if (count($tugas_keywords) == 1)
 	{
 		$query = "select * from tasks where type = '$tugas_keywords[0]'";
@@ -325,7 +503,7 @@ function printCourseCodeTask($con, $text, $tugas_keywords)
 	}
 }
 
-function isNewTask($text, $new_task_keywords)
+function newTask($text, $new_task_keywords)
 {
 	for ($i = 0; $i < count($new_task_keywords); $i++)
 	{
@@ -340,7 +518,7 @@ function isNewTask($text, $new_task_keywords)
 
 function makeNewTask($con, $text, $new_task_keywords)
 {
-	$task_str = substr($text, isNewTask($text, $new_task_keywords));
+	$task_str = substr($text, newTask($text, $new_task_keywords));
 	for ($i = 0; $i < count($new_task_keywords); $i++)
 	{
 		if (KMP($new_task_keywords[$i], $task_str) != -1)
@@ -364,7 +542,7 @@ function makeNewTask($con, $text, $new_task_keywords)
 	insertTaskDB($con, $course_code[0][0], $task_type, $topic, $deadline);
 }
 
-function isPostponeTask($text, $task_date_changed_keywords)
+function isChageDateTask($text, $task_date_changed_keywords)
 {
 	$pattern = "/Task\s*(\d+)\s*/i";
 	if (!preg_match($pattern, $text, $matches))
@@ -392,7 +570,7 @@ function isPostponeTask($text, $task_date_changed_keywords)
 	return -1;
 }
 
-function postponeTask($con, $text, $task_date_changed_keywords)
+function changeDateTask($con, $text, $task_date_changed_keywords)
 {
 	$task_id_pattern = "/Task\s*(\d+)\s*/i";
 	if (preg_match($task_id_pattern, $text, $matches))
@@ -431,17 +609,6 @@ function isDoneTask($text, $task_done_keywords)
 	else
 	{
 		$task_id = substr($matches[0], 4);
-	}
-	
-	$pattern = "/Tugas\s*(\d+)\s*/i";
-	if (!preg_match($pattern, $text, $matches))
-	{
-		return -1;
-	}
-	else
-	{
-		$task_id = substr($matches[0], 5);
-		
 	}
 
 	for ($i = 0; $i < count($task_done_keywords); $i++)
