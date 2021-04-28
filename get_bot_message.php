@@ -36,6 +36,26 @@ if (isNewTask($txt, $new_task_keywords) != -1)
 {
 	makeNewTask($con, $txt, $new_task_keywords);
 }
+else if (isCheckAllTask($txt) != -1)
+{
+	printAllTask($con);
+}
+else if (isCheckBetweenDateTask($txt) != -1)
+{
+	printTaskBetweenDates($con, $txt);
+}
+else if (isCheckNWeekTask($txt) != -1)
+{
+	printNWeekTask($con, $txt);
+}
+else if (isCheckNDayTask($txt) != -1)
+{
+	printNDayTask($con, $txt);
+}
+else if (isCheckTodayTask($txt) != -1)
+{
+	printTodayTask($con);
+}
 else if (isDoneTask($txt, $task_done_keywords) != -1)
 {
 	doneTask($con, $txt, $task_done_keywords);
@@ -43,6 +63,202 @@ else if (isDoneTask($txt, $task_done_keywords) != -1)
 else if (isPostponeTask($txt, $task_date_changed_keywords) != -1)
 {
 	postponeTask($con, $txt, $task_date_changed_keywords);
+}
+else
+{
+	echo "Maaf, saya tidak mengerti<br>";
+}
+
+function isCheckAllTask($text)
+{
+	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	{
+		if (KMP("Sejauh ini", $text) != -1)
+		{
+			return 1;
+		}
+
+		if (KMP("Saat ini", $text) != -1)
+		{
+			return 1;
+		}
+	}
+	return -1;
+}
+
+function printAllTask($con)
+{
+	$query = "select * from tasks";
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline<br>";
+	}
+	else
+	{
+		echo "[Daftar Deadline]<br>";
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
+}
+
+function isCheckTodayTask($text)
+{
+	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	{
+		if (KMP("Hari ini", $text) != -1)
+		{
+			return 1;
+		}
+	}
+	return -1;
+}
+
+function printTodayTask($con)
+{
+	$date_now = date('Y-m-d');
+	$query = "select * from tasks where deadline = '$date_now'";
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline untuk hari ini<br>";
+	}
+	else
+	{
+		echo "[Daftar Deadline]<br>";
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
+}
+
+function isCheckBetweenDateTask($text)
+{
+	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	{
+		$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
+		if (preg_match_all($date_pattern, $text, $matches))
+		{
+			if (count($matches[0]) == 2)
+			{
+				return 1;
+			}
+		}
+	}
+	return -1;
+}
+
+function printTaskBetweenDates($con, $text)
+{
+	$date_pattern = "/\d{2}\/\d{2}\/\d{4}/i";
+	preg_match_all($date_pattern, $text, $matches);
+
+	$date1 = DateTime::createFromFormat('d/m/Y', $matches[0][0])->format('Y-m-d');
+	$date2 = DateTime::createFromFormat('d/m/Y', $matches[0][1])->format('Y-m-d');
+
+	$query = "select * from tasks where deadline >= '$date1' and deadline <= '$date2'";
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+	}
+	else
+	{
+		echo "[Daftar Deadline]<br>";
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
+}
+
+function isCheckNDayTask($text)
+{
+	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	{
+		$day_pattern = "/(\d+)\s*hari ke depan/i";
+		if (preg_match($day_pattern, $text, $matches))
+		{
+			return 1;
+		}
+	}
+	return -1;
+}
+
+function printNDayTask($con, $text)
+{
+	$day_pattern = "/(\d+)\s*hari ke depan/i";
+	preg_match($day_pattern, $text, $matches);
+	$day_count_pattern = "/(\d+)/i";
+	preg_match($day_count_pattern, $matches[0], $day_count);
+	
+	$date_now = date('Y-m-d');
+	$date_now = new DateTimeImmutable($date_now);
+	$date_Nday = $date_now->modify("+$day_count[0] day");
+
+	$date_now_str = $date_now->format('Y-m-d');
+	$date_Nday_str = $date_Nday->format('Y-m-d');
+
+	$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nday_str'";
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+	}
+	else
+	{
+		echo "[Daftar Deadline]<br>";
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
+}
+
+function isCheckNWeekTask($text)
+{
+	if (KMP("Deadline", $text) != -1 || KMP("Tugas", $text) != -1 || KMP("Task", $text) != -1)
+	{
+		$day_pattern = "/(\d+)\s*minggu ke depan/i";
+		if (preg_match($day_pattern, $text, $matches))
+		{
+			return 1;
+		}
+	}
+	return -1;
+}
+
+function printNWeekTask($con, $text)
+{
+	$week_pattern = "/(\d+)\s*minggu ke depan/i";
+	preg_match($week_pattern, $text, $matches);
+	$week_count_pattern = "/(\d+)/i";
+	preg_match($week_count_pattern, $matches[0], $week_count);
+	
+	$date_now = date('Y-m-d');
+	$date_now = new DateTimeImmutable($date_now);
+	$date_Nweek = $date_now->modify("+$week_count[0] week");
+
+	$date_now_str = $date_now->format('Y-m-d');
+	$date_Nweek_str = $date_Nweek->format('Y-m-d');
+
+	$query = "select * from tasks where deadline >= '$date_now_str' and deadline <= '$date_Nweek_str'";
+	$res = mysqli_query($con, $query);
+
+	if (mysqli_num_rows($res) == 0) { 
+		echo "Tidak ada deadline di antara tanggal tersebut<br>";
+	}
+	else
+	{
+		echo "[Daftar Deadline]<br>";
+		while ($row = mysqli_fetch_assoc($res))
+		{
+			echo "(ID: ". $row['id']. ") ". DateTime::createFromFormat('Y-m-d', $row['deadline'])->format('d/m/Y'). " - ". $row['course_id']. " - ". $row['type']. " - ". $row['topic']. "<br>";
+		}
+	}
 }
 
 function isNewTask($text, $new_task_keywords)
