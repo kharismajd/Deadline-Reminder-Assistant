@@ -400,7 +400,8 @@ function insertTaskDB($con, $course_code, $type, $topic, $date)
 {
 	$strdate = $date->format('Y-m-d');
 	$query = "insert into tasks (course_id, type, deadline, topic) values ('$course_code', '$type', '$strdate', '$topic');";
-	if (mysqli_query($con, $query))
+	mysqli_query($con, $query);
+	if (mysqli_affected_rows($con) > 0)
 	{
 		$res = mysqli_query($con, "select * from tasks order by id desc limit 1");
 		$row = mysqli_fetch_assoc($res);
@@ -416,7 +417,8 @@ function renewTaskDB($con, $id, $new_date)
 {
 	$strdate = $new_date->format('Y-m-d');
 	$query = "update tasks set deadline = '$strdate' where id = '$id'";
-	if (mysqli_query($con, $query))
+	mysqli_query($con, $query);
+	if (mysqli_affected_rows($con) > 0)
 	{
 		echo "Task". $id. " diupdate";
 	}
