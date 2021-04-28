@@ -92,9 +92,78 @@ else if (isChageDateTask($txt, $task_date_changed_keywords) != -1)
 {
 	changeDateTask($con, $txt, $task_date_changed_keywords);
 }
+else if (viewHelpOption($txt) != -1)
+{
+	echo "
+	<br>[FITUR & CARA PENGGUNAANNYA]<br>
+		<b>1. Menambahkan Task Baru<br></b>
+		Kata kunci: <i>(jenis task) (kode matkul) (topik) pada (tanggal)</i><br>
+		Format kode matkul = 2 huruf diikuti 4 angka, tanpa spasi<br>
+		Format tanggal = dd/mm/yyyy<br>
+		e.g. 'Bot, tambahkan tubes IF2211 String Matching pada 28/04/2021'<br><br>
+	
+    	<b>2. Melihat Daftar Task<br></b>
+     	Contoh kata kunci yang dapat digunakan:<br>
+		 ● 'Apa saja deadline yang dimiliki sejauh ini?'<br>
+		 ● 'Apa saja deadline antara 01/05/2021 sampai 10/05/2021?'<br>
+		 ● 'Deadline 2 minggu ke depan apa saja?'<br>
+		 ● 'Deadline 7 hari ke depan apa saja?'<br>
+		 ● 'Apa saja deadline hari ini?'<br>
+		 ● '3 minggu ke depan ada kuis apa saja?'<br><br>
+		 
+		<b>3. Menampilkan Deadline suatu Task<br></b>
+		Hanya berlaku untuk task yang bersifat tugas atau memiliki tenggat waktu.<br>
+     	Contoh kata kunci yang dapat digunakan:<br>
+		 ● 'Deadline tugas IF2211 itu kapan'<br><br>
+
+		<b>4. Memperbarui Deadline suatu Task<br></b>
+     	Contoh kata kunci yang dapat digunakan:<br>
+		 ● 'Deadline task 12 diundur menjadi 20/05/2021'<br>
+		 ● 'Deadline task 20 maju menjadi 01/05/2021'<br><br>
+
+		<b>5. Menandai suatu Task sudah Selesai Dikerjakan<br></b>
+     	Contoh kata kunci yang dapat digunakan:<br>
+		 ● 'Saya sudah selesai mengerjakan task 16'<br>
+		 ● 'Task 20 telah berhasil'<br><br>
+
+		<b>6. Menampilkan Opsi Bantuan (<i>Help</i>)<br></b>
+		Berisikan command-command yang dapat digunakan oleh pengguna.
+     	Contoh kata kunci yang dapat digunakan:<br>
+		 ● 'Apa yang bisa asisten lakukan?'<br>
+		 ● 'Tampilkan opsi bantuan'<br><br>
+
+		[DAFTAR KATA PENTING]<br>
+		1.	asisten<br>
+		2.	assistant<br>
+		3.	bantuan<br>
+		4.	berhasil<br>
+		5.	bot<br>
+		6.	deadline<br>
+		7.	ditunda<br>
+		8.	diundur<br>
+		9.	done<br>
+		10.	hari ini<br>
+		11.	help<br>
+		12.	kuis<br>
+		13.	lakukan<br>
+		14.	maju<br>
+		15.	mundur<br>
+		16.	N hari ke depan<br>
+		17.	N minggu ke depan<br>
+		18.	praktikum<br>
+		19.	saat ini<br>
+		20.	sejauh ini<br>
+		21.	selesai<br>
+		22.	task<br>
+		23.	tubes<br>
+		24.	tucil<br>
+		25.	tugas<br>
+		26.	ujian<br><br>
+	";
+}
 else
 {
-	echo "Maaf, saya tidak mengerti<br>";
+	echo "Maaf, saya tidak mengerti maksud Anda.<br>";
 }
 
 function checkAllTask($text)
@@ -354,12 +423,12 @@ function printNDayTask($con, $text, $task_keyword)
 	if (mysqli_num_rows($res) == 0) { 
 		if ($task_keyword == NULL)
 		{
-			echo "Tidak ada deadline $day_count[0] hari dari sekarang<br>";
+			echo "Tidak ada deadline $day_count[0] hari ke depan<br>";
 		}
 		else
 		{
 			$lowercase_task_keyword = strtolower($task_keyword);
-			echo "Tidak ada $lowercase_task_keyword $day_count[0] hari dari sekarang<br>";
+			echo "Tidak ada $lowercase_task_keyword $day_count[0] hari ke depan<br>";
 		}
 	}
 	else
@@ -429,12 +498,12 @@ function printNWeekTask($con, $text, $task_keyword)
 	if (mysqli_num_rows($res) == 0) { 
 		if ($task_keyword == NULL)
 		{
-			echo "Tidak ada deadline $week_count[0] minggu dari sekarang<br>";
+			echo "Tidak ada deadline $week_count[0] minggu ke depan<br>";
 		}
 		else
 		{
 			$lowercase_task_keyword = strtolower($task_keyword);
-			echo "Tidak ada $lowercase_task_keyword $week_count[0] minggu dari sekarang<br>";
+			echo "Tidak ada $lowercase_task_keyword $week_count[0] minggu ke depan<br>";
 		}
 	}
 	else
@@ -671,6 +740,22 @@ function deleteTaskDB($con, $id)
 	{
 		echo "Task belum terdaftar";
 	}
+}
+
+function viewHelpOption($text)
+{
+	if (KMP("Assistant", $text) != -1 || KMP("Asisten", $text) != -1 || KMP("Bot", $text) != -1)
+	{
+		if (KMP("Lakukan", $text) != -1)
+		{
+			return 1;
+		}
+	}
+	else if (KMP("Bantuan", $text) != -1 || KMP("Help", $text) != 1)
+	{
+		return 1;
+	}
+	return -1;
 }
 
 function KMP($pattern, $text)
