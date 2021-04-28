@@ -163,7 +163,7 @@ else if (viewHelpOption($txt) != -1)
 }
 else
 {
-	echo "Maaf, saya tidak mengerti maksud Anda.<br>";
+	echo "Maaf, saya tidak mengerti.<br>";
 }
 
 function checkAllTask($text)
@@ -751,7 +751,7 @@ function viewHelpOption($text)
 			return 1;
 		}
 	}
-	else if (KMP("Bantuan", $text) != -1 || KMP("Help", $text) != 1)
+	else if (KMP("Bantuan", $text) != -1 || KMP("Help", $text) != -1)
 	{
 		return 1;
 	}
