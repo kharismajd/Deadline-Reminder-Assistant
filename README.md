@@ -19,7 +19,9 @@ Jika ingin menjalankan di server lokal:
 2. Copy isi folder src ke dalam folder chatbot.
 3. Buka aplikasi peramban (browser), contoh: Google Chrome.
 4. Ketik "localhost/chatbot/index.php" di tab pencarian lalu klik Enter.
-5. Silakan gunakan aplikasi chatbot.  
+5. Silakan gunakan aplikasi chatbot.
+
+Jika ingin melihat website yang dideploy, dapat membuka link https://bot-apa-ya.herokuapp.com/ 
 
 ## Tentang Pembuat
 <ul>
