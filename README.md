@@ -21,7 +21,8 @@ Jika ingin menjalankan di server lokal:
 4. Ketik "localhost/chatbot/index.php" di tab pencarian lalu klik Enter.
 5. Silakan gunakan aplikasi chatbot.
 
-Jika ingin melihat website yang dideploy, dapat membuka link https://bot-apa-ya.herokuapp.com/ 
+Jika ingin melihat website yang dideploy, dapat membuka link https://bot-apa-ya.herokuapp.com/
+(Saat ini tidak bisa berjalan dengan baik karena masa berlaku database gratis sudah habis)
 
 ## Tentang Pembuat
 <ul>
